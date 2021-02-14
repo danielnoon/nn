@@ -36,14 +36,27 @@ export class Layer {
 }
 
 export function layer(
-  inputs: number,
   nodes: number,
   activation: ActivationFunction
-): Layer {
-  const arr = new Array(nodes).fill(0);
-  return new Layer(arr.map((_) => new Perceptron(inputs, activation)));
+): (inputs: number) => Layer {
+  return function (inputs: number) {
+    const arr = new Array(nodes).fill(0);
+    return new Layer(arr.map((_) => new Perceptron(inputs, activation)));
+  };
 }
 
-export function network(...layers: Layer[]) {
-  return new Network(layers);
+export function network(
+  inputs: number,
+  ...layers: ((inputs: number) => Layer)[]
+) {
+  const inputLayer = layers[0](inputs);
+  const l: Layer[] = [inputLayer];
+  let prev = inputLayer.perceptrons.length;
+
+  for (const layerFunction of layers.slice(1)) {
+    const n = layerFunction(prev);
+    prev = n.perceptrons.length;
+    l.push(n);
+  }
+  return new Network(l);
 }

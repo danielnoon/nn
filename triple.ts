@@ -12,10 +12,6 @@ const data = load_csv("iris.data", {
 
 const [c, t] = slice(data, 0.3);
 
-const n = network(
-  layer(4, 4, sigmoid),
-  layer(4, 4, sigmoid),
-  layer(4, 3, sigmoid)
-);
+const n = network(4, layer(4, sigmoid), layer(4, sigmoid), layer(3, sigmoid));
 
 console.log(n.train(c.entries[0], 0.2));

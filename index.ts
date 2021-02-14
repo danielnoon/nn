@@ -2,7 +2,7 @@ import { step } from "./activation.ts";
 import { collection, Entry } from "./data.ts";
 import { load_csv, StringStrategy } from "./load_csv.ts";
 import { epoch, loss, perceptron, train } from "./perceptron.ts";
-import { subset } from "./subset.ts";
+import { slice } from "./slice.ts";
 
 const p = perceptron({
   features: 4,
@@ -23,7 +23,7 @@ data.entries = data.entries
     return new Entry(x, y);
   });
 
-const [c, t] = subset(data, 0.3);
+const [c, t] = slice(data, 0.3);
 
 train(p, c, 0.2, 10);
 
