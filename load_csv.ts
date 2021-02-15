@@ -8,7 +8,12 @@ export enum StringStrategy {
 
 export function load_csv(
   path: string,
-  kwarg: { y: number; str: StringStrategy; labels: string[] }
+  kwarg: {
+    y: number;
+    str: StringStrategy;
+    labels: string[];
+    type: "classification";
+  }
 ) {
   const text = Deno.readTextFileSync(path).trim();
   const observations = text
@@ -35,6 +40,21 @@ export function load_csv(
   );
 
   const yChanged = moveY(processed, kwarg.y);
+
+  if (kwarg.type === "classification") {
+    const max = yChanged.reduce(
+      (prev, [curr]) => (curr > prev ? curr : prev),
+      0
+    );
+    const expanded = yChanged.map((ent) => {
+      const y = new Array(max + 1)
+        .fill(0)
+        .map((_, i) => (i === ent[0] ? 1 : 0));
+      return [...y, ...ent.slice(1)];
+    });
+
+    return collection(expanded, kwarg.labels, max + 1);
+  }
 
   return collection(yChanged, kwarg.labels);
 }
