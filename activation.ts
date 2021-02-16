@@ -1,4 +1,4 @@
-type fn = (z: number) => number;
+type fn = (z: number, w: number[]) => number;
 
 export type ActivationFunction = [base: fn, derivative: fn];
 
@@ -7,8 +7,7 @@ export const step: ActivationFunction = [
   (x: number) => 0,
 ];
 
-const sigmoidBase = (x: number) => 1 / (1 + Math.exp(-x));
 export const sigmoid: ActivationFunction = [
-  sigmoidBase,
-  (x: number) => sigmoidBase(x) * (1 - sigmoidBase(x)),
+  (x: number) => 1 / (1 + Math.exp(-x)),
+  (x: number) => x * (1 - x),
 ];

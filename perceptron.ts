@@ -7,13 +7,13 @@ import { zip } from "./zip.ts";
 export class Perceptron {
   public weights: number[];
 
-  constructor(features: number, private activation: ActivationFunction) {
+  constructor(features: number, public activation: ActivationFunction) {
     this.weights = new Array(features + 1).fill(1).map((_) => Math.random());
   }
 
   predict(observation: number[]) {
     const m = dot([1, ...observation], this.weights);
-    return this.activation[0](m);
+    return this.activation[0](m, []);
   }
 
   train(entry: Entry, alpha: number) {
