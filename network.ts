@@ -2,6 +2,7 @@ import { ActivationFunction } from "./activation.ts";
 import { Collection, Entry } from "./data.ts";
 import { dot } from "./dot.ts";
 import { last } from "./last.ts";
+import { LossFunction } from "./loss.ts";
 import { perceptron, Perceptron } from "./perceptron.ts";
 import { range } from "./range.ts";
 import { reverse } from "./reverse.ts";
@@ -9,7 +10,20 @@ import { sum } from "./sum.ts";
 import { zip } from "./zip.ts";
 
 export class Network {
-  constructor(public layers: Layer[]) {}
+  constructor(public layers: Layer[], public loss: LossFunction) {}
+
+  static fromWeights(weights: number[][]) {
+    const shape = weights.map((w) => w.length);
+    console.log(weights, shape);
+  }
+
+  loadWeights(weights: number[][][]) {
+    for (let i of range(weights.length)) {
+      for (let j of range(weights[i].length)) {
+        this.layers[i].perceptrons[j].weights = weights[i][j];
+      }
+    }
+  }
 
   predict(observations: number[]) {
     return this.layers.reduce((prev, curr) => curr.ff(prev), observations);
@@ -32,14 +46,28 @@ export class Network {
 
     const outputs = this.ff(entry.x);
 
-    return backpropagate(this.layers, outputs, entry.x, ideal, alpha);
+    return backpropagate(
+      this.layers,
+      outputs,
+      entry.x,
+      ideal,
+      alpha,
+      this.loss
+    );
   }
 
   public error(entry: Entry) {
     const ideal = entry.y;
-    const outputs = this.ff(entry.x);
+    const output = this.predict(entry.x);
 
-    return sum(zip(ideal, last(outputs)).map(([i, a]) => (i - a) ** 2)) / 2;
+    return (
+      sum(zip(ideal, output).map(([i, o]) => this.loss(o, i) ** 2)) /
+      ideal.length
+    );
+  }
+
+  public exportWeights() {
+    return this.layers.map((l) => l.perceptrons.map((p) => p.weights));
   }
 }
 
@@ -48,7 +76,8 @@ function backpropagate(
   outputs: number[][],
   prev: number[],
   y: number[],
-  alpha: number
+  alpha: number,
+  loss: LossFunction
 ): number[] {
   const l = layers[0];
   const o = outputs[0];
@@ -60,8 +89,8 @@ function backpropagate(
     for (const i of range(l.perceptrons.length)) {
       const p = l.perceptrons[i];
 
-      const a = o[i] - y[i];
-      const b = p.activation[1](o[i], o);
+      const a = loss(o[i], y[i]);
+      const b = p.activation[1](o[i], o, i);
 
       p.weights = p.weights.map((w, j) => {
         const c = h[j];
@@ -79,14 +108,15 @@ function backpropagate(
     outputs.slice(1),
     outputs[0],
     y,
-    alpha
+    alpha,
+    loss
   );
 
   for (const i of range(l.perceptrons.length)) {
     const p = l.perceptrons[i];
 
     const a = d1[i];
-    const b = p.activation[1](o[i], o);
+    const b = p.activation[1](o[i], o, i);
 
     p.weights = p.weights.map((w, j) => {
       const c = h[j];
@@ -105,10 +135,11 @@ export class Layer {
   ff(input: number[]) {
     return this.perceptrons
       .map((p) => ({ d: dot(p.weights, [1, ...input]), a: p.activation }))
-      .map((v, _, a) =>
+      .map((v, i, a) =>
         v.a[0](
           v.d,
-          a.map((b) => b.d)
+          a.map((b) => b.d),
+          i
         )
       );
   }
@@ -126,7 +157,11 @@ export function layer(
   };
 }
 
-export function network(inputs: number, ...layers: LayerGenerator[]) {
+export function network(
+  inputs: number,
+  loss: LossFunction,
+  ...layers: LayerGenerator[]
+) {
   const inputLayer = layers[0](inputs);
   const l: Layer[] = [inputLayer];
   let prev = inputLayer.perceptrons.length;
@@ -136,14 +171,12 @@ export function network(inputs: number, ...layers: LayerGenerator[]) {
     prev = n.perceptrons.length;
     l.push(n);
   }
-  return new Network(l);
+  return new Network(l, loss);
 }
 
 export function epoch(network: Network, collection: Collection, alpha: number) {
-  for (let i of range(10)) {
-    for (const entry of collection.shuffle().entries) {
-      network.train(entry, alpha);
-    }
+  for (const entry of collection.shuffle().entries) {
+    network.train(entry, alpha);
   }
 }
 
@@ -156,11 +189,13 @@ export function train(
 ) {
   let i = 0;
   const losses: number[] = [];
-  while (i < max_epochs && loss(network, data) > target_loss) {
-    if (i % 100 === 0) console.log(`Epoch ${i}`);
-    i++;
+  let l = loss(network, data);
+  while (i < max_epochs && l > target_loss) {
+    if (i % 100 === 0) console.log(`Epoch: ${i}\nLoss: ${l}`);
     epoch(network, data, alpha);
-    losses.push(loss(network, data));
+    losses.push(l);
+    l = loss(network, data);
+    i++;
   }
   return losses;
 }

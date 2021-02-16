@@ -13,7 +13,7 @@ export class Perceptron {
 
   predict(observation: number[]) {
     const m = dot([1, ...observation], this.weights);
-    return this.activation[0](m, []);
+    return this.activation[0](m, [], 0);
   }
 
   train(entry: Entry, alpha: number) {
