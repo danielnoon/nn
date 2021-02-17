@@ -23,7 +23,7 @@ class RRange {
     for (let i = this.start; i < this.end; i += this.step) yield i;
   }
 
-  arr() {
+  get arr() {
     return Array.from(this);
   }
 }

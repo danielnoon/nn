@@ -27,13 +27,11 @@ export function load_csv(
     const t = getTypeOf(obs);
     switch (t) {
       case "string":
-        return kwarg.str === "class"
-          ? strClassificationGenerator()
-          : (x: string) => 1;
+        return (x: string) => x;
       case "number":
         return (x: string) => Number(x);
       case "boolean":
-        return (x: string) => (x === "true" ? 1 : 0);
+        return (x: string) => (x === "true" ? true : false);
       default:
         return (x: string) => 0;
     }
@@ -47,22 +45,6 @@ export function load_csv(
 
   let [y, lab] = moveY(processed, labels, y_idx);
   let num_y = 1;
-
-  if (kwarg.type === "classification") {
-    const max = y.reduce((prev, [curr]) => (curr > prev ? curr : prev), 0);
-
-    y = y.map((ent) => {
-      const y = new Array(max + 1)
-        .fill(0)
-        .map((_, i) => (i === ent[0] ? 1 : 0));
-      return [...y, ...ent.slice(1)];
-    });
-
-    const lab_y = new Array(max + 1).fill(0).map((_, i) => `${lab[0]}_${i}`);
-    lab = [...lab_y, ...lab.slice(1)];
-
-    num_y = max + 1;
-  }
 
   return collection(y, lab, num_y);
 }
@@ -79,11 +61,7 @@ function getTypeOf(obs: string) {
   return "string";
 }
 
-function moveY(
-  obs: number[][],
-  labels: string[],
-  y: number
-): [number[][], string[]] {
+function moveY<T>(obs: T[][], labels: string[], y: number): [T[][], string[]] {
   if (y === 0) {
     return [obs, labels];
   } else if (y === obs[0].length - 1) {
