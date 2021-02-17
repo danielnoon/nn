@@ -1,6 +1,6 @@
 import { step } from "./activation.ts";
 import { collection, Entry } from "./data.ts";
-import { load_csv, StringStrategy } from "./load_csv.ts";
+import { load_csv } from "./load_csv.ts";
 import { epoch, loss, perceptron, train } from "./perceptron.ts";
 import { slice } from "./slice.ts";
 
@@ -11,7 +11,7 @@ const p = perceptron({
 
 const data = load_csv("iris.data", {
   y: 4,
-  str: StringStrategy.CLASS,
+  str: "class",
   labels: ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"],
   type: "classification",
 });
@@ -21,7 +21,7 @@ data.entries = data.entries
   .map((l) => {
     const x = l.x.slice(0, 4);
     const y = l.y[0] === 0 ? 0 : 1;
-    return new Entry(x, [y]);
+    return new Entry(x, [y], l.xlab, l.ylab);
   });
 
 const [c, t] = slice(data, 0.3);

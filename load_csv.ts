@@ -33,7 +33,7 @@ export function load_csv(
       case "number":
         return (x: string) => Number(x);
       case "boolean":
-        return (x: string) => Boolean;
+        return (x: string) => (x === "true" ? 1 : 0);
       default:
         return (x: string) => 0;
     }

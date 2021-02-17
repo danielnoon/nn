@@ -86,30 +86,32 @@ export class Entry {
 }
 
 export function collection(
-  entries: (number | string | boolean)[][],
+  entries: number[][],
   lab: string[],
   y_values: number = 1
 ) {
-  
   const xlab = lab.slice(y_values);
   const ylab = lab.slice(0, y_values);
 
-  const classes = new Map<string, Map<number, string>>(); 
-  entries[0];
+  // const classes = new Map<string, Map<number, string>>();
+  // entries[0]
 
-  const numbers = entries.map((entry) => {
-    return entry.map((v, i) => {
-      const t = typeof v;
-      if (!)
-    })
-  })
+  // const numbers = entries.map((entry) => {
+  //   return entry.map((v, i) => {
+  //     const t = typeof v;
+  //     if (!)
+  //   })
+  // })
 
   return new Collection(
-    entries.map(
-      (entry) => {
-        return new Entry(entry.slice(y_values), entry.slice(0, y_values), xlab, ylab)
-      }
-    ),
+    entries.map((entry) => {
+      return new Entry(
+        entry.slice(y_values),
+        entry.slice(0, y_values),
+        xlab,
+        ylab
+      );
+    }),
     xlab,
     ylab
   );

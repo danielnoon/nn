@@ -26,7 +26,7 @@ const n = network(4, sse, layer(4, sigmoid), layer(3, softmax));
 // const weights = await Deno.readTextFile("./weights.json");
 // n.loadWeights(JSON.parse(weights));
 
-const losses = train(n, c, 0.001, 0.01, 1000);
+const losses = train(n, c, 0.001, 0.01, 100000);
 Deno.writeTextFile("./loss.txt", losses.join("\n"));
 
 function getFlowerType(c: number[]) {
