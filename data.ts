@@ -246,12 +246,13 @@ export function head(c: Collection, n = 5) {
   return subset(c, { rows: range(n) });
 }
 
-export function addColumn(
-  c: Collection,
-  label: string,
-  data: number[],
-  options: {}
-) {}
+// export function addColumn(
+//   c: Collection,
+//   label: string,
+//   data: number[],
+// ) {
+
+// }
 
 export function onehot(c: Collection, xy: "x" | "y", i: number) {
   const classes = new Map([...c.classes]);

@@ -21,13 +21,13 @@ const data = load_csv("iris.data", {
 
 const [c, t] = slice(onehot(data, "y", 0), 0.2);
 
-const n = network(4, sse, layer(4, sigmoid), layer(3, softmax));
+const n = network(4, sse, layer(3, sigmoid), layer(3, softmax));
 
-// const weights = await Deno.readTextFile("./weights.json");
-// n.loadWeights(JSON.parse(weights));
+const weights = await Deno.readTextFile("./weights.json");
+n.loadWeights(JSON.parse(weights));
 
-const losses = train(n, c, 0.001, 0.01, 100000);
-Deno.writeTextFile("./loss.txt", losses.join("\n"));
+// const losses = train(n, c, 0.001, 0.01, 100000);
+// Deno.writeTextFile("./loss.txt", losses.join("\n"));
 
 function getFlowerType(c: number[]) {
   const max = c.indexOf(Math.max(...c));
@@ -43,19 +43,26 @@ const outputs = collection(
     const predicted = getFlowerType(out);
     const expected = getFlowerType(entry.y);
     const error = n.error(entry);
-    return [expected === predicted, expected, predicted, error];
+    return [expected === predicted, expected, predicted, error, ...out];
   }),
-  ["Correct", "Expected", "Predicted", "Error"],
+  [
+    "Correct",
+    "Expected",
+    "Predicted",
+    "Error",
+    "Setosa",
+    "Versicolor",
+    "Virginica",
+  ],
   1
 );
 
 outputs
   .subset({ rows: (row) => row.getY("Correct") === 0 })
-  .head(10)
   .sort("Error", "desc")
   .print();
 
-Deno.writeTextFile(
-  "./weights.json",
-  JSON.stringify(n.exportWeights(), null, 0)
-);
+// Deno.writeTextFile(
+//   "./weights.json",
+//   JSON.stringify(n.exportWeights(), null, 0)
+// );
