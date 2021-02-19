@@ -37,6 +37,10 @@ export class Collection {
     return sort(this, by, dir);
   }
 
+  onehot(col: string) {
+    return onehot(this, col);
+  }
+
   // addColumn(label: string, values: number[], type: 'x' | 'y', opts: ) {
   //   let xlab = type === 'x' ? [...this.xlab, label]
   // }
@@ -254,7 +258,10 @@ export function head(c: Collection, n = 5) {
 
 // }
 
-export function onehot(c: Collection, xy: "x" | "y", i: number) {
+export function onehot(c: Collection, col: string) {
+  const xy = c.xlab.includes(col) ? "x" : "y";
+  const i = (xy === "x" ? c.xlab : c.ylab).indexOf(col);
+
   const classes = new Map([...c.classes]);
   if (classes.has(`${xy}_${i}`)) {
     classes.delete(`${xy}_${i}`);

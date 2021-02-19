@@ -19,7 +19,7 @@ const data = load_csv("iris.data", {
   type: "classification",
 });
 
-const [c, t] = slice(onehot(data, "y", 0), 0.2);
+const [c, t] = slice(onehot(data, "Flower"), 0.2);
 
 const n = network(4, sse, layer(3, sigmoid), layer(3, softmax));
 

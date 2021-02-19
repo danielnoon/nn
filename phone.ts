@@ -13,13 +13,13 @@ const data = load_csv("./data/phone/train.csv", {
   type: "classification",
 });
 
-data
-  .subset({
-    x_columns: ["blue", "int_memory"],
-  })
-  .shuffle()
-  .head()
-  .print();
+// data
+//   .subset({
+//     x_columns: ["blue", "int_memory"],
+//   })
+//   .shuffle()
+//   .head()
+//   .print();
 
 // const sub = data.subset({
 //   x_columns: ["blue", "sc_w", "touch_screen", "ram"],
