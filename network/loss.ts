@@ -9,3 +9,8 @@ export const crossentropy: LossFunction = (actual, expected) => {
 };
 
 export const sse: LossFunction = (actual, expected) => actual - expected;
+
+export default new Map<string, LossFunction>([
+  ["crossentropy", crossentropy],
+  ["sse", sse],
+]);

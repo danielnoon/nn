@@ -1,8 +1,9 @@
 import { ActivationFunction } from "./activation.ts";
-import { Collection, Entry } from "./data.ts";
-import { dot } from "./dot.ts";
-import { sum } from "./sum.ts";
-import { zip } from "./zip.ts";
+import { dot } from "../tools/dot.ts";
+import { sum } from "../tools/sum.ts";
+import { zip } from "../tools/zip.ts";
+import { Entry } from "../data/entry.ts";
+import { Collection } from "../data/collection.ts";
 
 export class Perceptron {
   public weights: number[];

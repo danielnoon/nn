@@ -30,6 +30,7 @@ class RRange {
 
 export function range(end: number): RRange;
 export function range(start: number, end: number): RRange;
+export function range(start: number, end: number, step: number): RRange;
 export function range(start: number, end?: number, step?: number) {
   return new RRange(start, end, step);
 }

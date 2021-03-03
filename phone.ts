@@ -1,10 +1,4 @@
-import { relu, sigmoid } from "./activation.ts";
-import { subset } from "./data.ts";
-import { load_csv } from "./load_csv.ts";
-import { sse } from "./loss.ts";
-import { layer, network, train, loss } from "./network.ts";
-import { range } from "./range.ts";
-import { slice } from "./slice.ts";
+import { load_csv } from "./data/load_csv.ts";
 
 const data = load_csv("./data/phone/train.csv", {
   y: "last",
@@ -13,13 +7,13 @@ const data = load_csv("./data/phone/train.csv", {
   type: "classification",
 });
 
-// data
-//   .subset({
-//     x_columns: ["blue", "int_memory"],
-//   })
-//   .shuffle()
-//   .head()
-//   .print();
+data
+  .subset({
+    x_columns: ["blue", "int_memory"],
+  })
+  .shuffle()
+  .head()
+  .print();
 
 // const sub = data.subset({
 //   x_columns: ["blue", "sc_w", "touch_screen", "ram"],

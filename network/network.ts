@@ -1,16 +1,26 @@
-import { ActivationFunction } from "./activation.ts";
-import { Collection, Entry } from "./data.ts";
-import { dot } from "./dot.ts";
-import { last } from "./last.ts";
-import { LossFunction } from "./loss.ts";
-import { perceptron, Perceptron } from "./perceptron.ts";
-import { range } from "./range.ts";
-import { reverse } from "./reverse.ts";
-import { sum } from "./sum.ts";
-import { zip } from "./zip.ts";
+import lossMap, { LossFunction } from "./loss.ts";
+import { range } from "../tools/range.ts";
+import { sum } from "../tools/sum.ts";
+import { zip } from "../tools/zip.ts";
+import { Entry } from "../data/entry.ts";
+import { Collection } from "../data/collection.ts";
+import { Layer, LayerGenerator } from "./layer.ts";
 
 export class Network {
-  constructor(public layers: Layer[], public loss: LossFunction) {}
+  public loss: LossFunction;
+
+  constructor(public layers: Layer[], loss: string | LossFunction) {
+    if (typeof loss === "string") {
+      const l = lossMap.get(loss);
+      if (l) {
+        this.loss = l;
+      } else {
+        throw new Error(`Loss function ${loss} does not exist`);
+      }
+    } else {
+      this.loss = loss;
+    }
+  }
 
   static fromWeights(weights: number[][]) {
     const shape = weights.map((w) => w.length);
@@ -129,37 +139,9 @@ function backpropagate(
   return deltas.slice(1);
 }
 
-export class Layer {
-  constructor(public perceptrons: Perceptron[]) {}
-
-  ff(input: number[]) {
-    return this.perceptrons
-      .map((p) => ({ d: dot(p.weights, [1, ...input]), a: p.activation }))
-      .map((v, i, a) =>
-        v.a[0](
-          v.d,
-          a.map((b) => b.d),
-          i
-        )
-      );
-  }
-}
-
-type LayerGenerator = (inputs: number) => Layer;
-
-export function layer(
-  nodes: number,
-  activation: ActivationFunction
-): LayerGenerator {
-  return function (inputs: number) {
-    const arr = new Array(nodes).fill(0);
-    return new Layer(arr.map((_) => new Perceptron(inputs, activation)));
-  };
-}
-
 export function network(
   inputs: number,
-  loss: LossFunction,
+  loss: LossFunction | string,
   ...layers: LayerGenerator[]
 ) {
   const inputLayer = layers[0](inputs);
@@ -183,15 +165,32 @@ export function epoch(network: Network, collection: Collection, alpha: number) {
 export function train(
   network: Network,
   data: Collection,
-  alpha: number,
-  target_loss: number = 0.001,
-  max_epochs: number = 10000
+  options: {
+    alpha: number;
+    max_epochs?: number;
+    target_loss?: number;
+    print_epochs?: number;
+  }
 ) {
+  const {
+    alpha,
+    max_epochs = Infinity,
+    target_loss = 0,
+    print_epochs = 0,
+  } = options;
+
+  if (max_epochs === Infinity && target_loss === 0) {
+    throw new Error("Either max_epochs or target_loss must be specified!");
+  }
+
   let i = 0;
   const losses: number[] = [];
   let l = loss(network, data);
   while (i < max_epochs && l > target_loss) {
-    if (i % 100 === 0) console.log(`Epoch: ${i}\nLoss: ${l}`);
+    if (print_epochs > 0 && i % print_epochs === 0) {
+      console.log(`Epoch: ${i}\nLoss: ${l}`);
+    }
+
     epoch(network, data, alpha);
     losses.push(l);
     l = loss(network, data);

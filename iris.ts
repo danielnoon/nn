@@ -1,68 +1,106 @@
-import { relu, sigmoid, softmax } from "./activation.ts";
-import { layer, loss, network, train } from "./network.ts";
-import { load_csv } from "./load_csv.ts";
-import { slice } from "./slice.ts";
-import { crossentropy, sse } from "./loss.ts";
-import { collection, onehot } from "./data.ts";
-import { collapse } from "./collapse.ts";
+import { collection } from "./data/collection.ts";
+import { load_csv } from "./data/load_csv.ts";
+import { onehot } from "./data/onehot.ts";
+import { layer } from "./network/layer.ts";
+import { loss, network, train } from "./network/network.ts";
+import { collapse } from "./tools/collapse.ts";
+import { range } from "./tools/range.ts";
 
-const data = load_csv("iris.data", {
+// Load the iris dataset.
+// I've modified the csv we used in class to include
+// a header so we don't have to specify it here
+const data = load_csv("datasets/iris.data", {
   y: 4,
   str: "class",
-  labels: [
-    "Sepal Length",
-    "Sepal Width",
-    "Petal Length",
-    "Petal Width",
-    "Flower",
-  ],
+  labels: "infer",
   type: "classification",
 });
 
-const [c, t] = slice(onehot(data, "Flower"), 0.2);
+let transformed = data
+  .subset({
+    rows: (row) => row.getX("Petal Width") <= 1.5,
+  })
+  .sort("Sepal Length", "desc");
 
-const n = network(4, sse, layer(3, sigmoid), layer(3, softmax));
+let prepared = onehot(transformed, "Species");
 
-const weights = await Deno.readTextFile("./weights.json");
-n.loadWeights(JSON.parse(weights));
+prepared
+  .subset({
+    x_columns: ["Petal Length", "Petal Width"],
+    y_columns: range(0, 3, 2), // equivalent to [0, 2]
+    rows: (row) => row.getX("Petal Length") > 5,
+  })
+  .head()
+  .print();
 
-// const losses = train(n, c, 0.001, 0.01, 100000);
-// Deno.writeTextFile("./loss.txt", losses.join("\n"));
+// Print the first item in the collection
+data.head(1).print();
 
+// First, onehot the collection on the species column.
+// Then, slice the collection into training and testing sets.
+const [training, testing] = onehot(data, "Species").slice(0.2);
+
+// Print the first item in the training set.
+// Notice that the "Species" label has been separated into
+// three columns. Additionally, the row will likely be different since
+// slice shuffles the data by default.
+training.head(1).print();
+
+// Create the neural network.
+// This setup uses 4 inputs (petal and sepal length and width)
+// We use sum of squared error as our loss function
+//      (crossentropy would be better but my implementation is broken haha)
+// There is one hidden layer with three nodes and relu activation.
+// The output layer has 3 nodes (one for each Species) and uses softmax activation.
+const n = network(4, "sse", layer(3, "sigmoid"), layer(3, "softmax"));
+
+// Let's train the network!
+// The train function returns a list of the loss after each epoch
+// which is very useful for graphing!
+train(n, training, {
+  alpha: 0.01,
+  max_epochs: 10000,
+  target_loss: 0.02,
+  // print_epochs: 100, // uncomment this to print the loss every 100 epochs
+});
+
+// Print out the loss for both the training and test sets.
+// The loss function implicitly uses the loss function specified
+// when the network was created (sse in this case).
+console.log("\n=======================================\n");
+console.log("Training loss: ", loss(n, training));
+console.log("Test loss: ", loss(n, testing));
+
+// Helper to get the flower name from network output.
 function getFlowerType(c: number[]) {
-  const max = c.indexOf(Math.max(...c));
-  return ["setosa", "versicolor", "virginica"][max];
+  return ["setosa", "versicolor", "virginica"][collapse(c)];
 }
 
-console.log("Training loss: ", loss(n, c));
-console.log("Test loss: ", loss(n, t));
+// Create a collection for analyzing the output of the model.
 
-const outputs = collection(
-  t.map((entry) => {
-    const out = n.predict(entry.x);
-    const predicted = getFlowerType(out);
-    const expected = getFlowerType(entry.y);
-    const error = n.error(entry);
-    return [expected === predicted, expected, predicted, error, ...out];
-  }),
-  [
-    "Correct",
-    "Expected",
-    "Predicted",
-    "Error",
-    "Setosa",
-    "Versicolor",
-    "Virginica",
-  ],
-  1
-);
+const results = testing.map((entry) => {
+  const out = n.predict(entry.x);
+  const predicted = getFlowerType(out);
+  const expected = getFlowerType(entry.y);
+  const error = n.error(entry);
+  return [expected === predicted, expected, predicted, error, ...out];
+});
 
+const labels = [
+  "Correct",
+  "Expected",
+  "Predicted",
+  "Error",
+  "Setosa",
+  "Versicolor",
+  "Virginica",
+];
+
+const outputs = collection(results, labels);
+
+// Grab and print any erroneous predictions, sorted by
+// worst error first.
 outputs
   .subset({ rows: (row) => row.getY("Correct") === 0 })
   .sort("Error", "desc")
   .print();
-
-// Deno.writeTextFile(
-//   "./weights.json",
-//   JSON.stringify(n.exportWeights(), null, 0)
-// );

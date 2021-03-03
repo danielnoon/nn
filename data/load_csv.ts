@@ -1,13 +1,13 @@
-import { collection } from "./data.ts";
-import { zip } from "./zip.ts";
+import { zip } from "../tools/zip.ts";
+import { collection } from "./collection.ts";
 
 export function load_csv(
   path: string,
   kwarg: {
     y: number | "last";
-    str: "class" | "embed";
-    labels: string[] | "infer";
-    type: "classification" | "regression";
+    str?: "class" | "embed";
+    labels?: string[] | "infer";
+    type?: "classification" | "regression";
   }
 ) {
   const text = Deno.readTextFileSync(path).trim();
@@ -17,7 +17,7 @@ export function load_csv(
     .map((line) => line.trim().split(","));
 
   let labels: string[] = [];
-  if (kwarg.labels === "infer") {
+  if (!kwarg.labels || kwarg.labels === "infer") {
     labels = observations.shift() as string[];
   } else {
     labels = kwarg.labels;
