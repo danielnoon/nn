@@ -90,7 +90,7 @@ let or = collection(
 
 **Parameters**:
 
-- y: index of the output column
+- y: index of the output column or `"last"`
 - labels: (optional) either `"infer"` or a list of labels
   - default: `"infer"`
 
@@ -101,11 +101,13 @@ let iris = load_csv("datasets/iris.data", {
 });
 ```
 
-#### `Collection#print()`
+#### Methods
+
+##### `Collection#print()`
 
 Prints the collection as a table to the console.
 
-#### `Collection#head(n)`
+##### `Collection#head(n)`
 
 **Parameters**:
 
@@ -113,7 +115,7 @@ Prints the collection as a table to the console.
 
 **Returns** Collection with only the first `n` elements.
 
-#### `Collection#slice(p, shuffle?)`
+##### `Collection#slice(p, shuffle?)`
 
 **Parameters**
 
@@ -123,7 +125,7 @@ Prints the collection as a table to the console.
 
 **Returns** Tuple of two collections: `[training, testing]`
 
-#### `Collection#onehot(column)`
+##### `Collection#onehot(column)`
 
 **Parameters**
 
@@ -131,7 +133,7 @@ Prints the collection as a table to the console.
 
 **Returns** Collection with the column `column` expanded into one-hot form.
 
-#### `Collection#sort(column, direction)`
+##### `Collection#sort(column, direction)`
 
 **Parameters**
 
@@ -140,7 +142,7 @@ Prints the collection as a table to the console.
 
 **Returns** Collection with the rows sorted in ascending or descending order by specified column.
 
-#### `Collection#subset(options)`
+##### `Collection#subset(options)`
 
 This is a rather special transformation, so it deserves a more nuanced explanation.
 
@@ -165,6 +167,8 @@ data.subset({
 
 ## Neural Network
 
+### Making a Model
+
 Creating a neural network model is simple:
 
 The function `network` takes two arguments plus a list layer generators. The first two arguments are:
@@ -180,7 +184,7 @@ A list generator is created with the `layer` constructor function. This function
 Here is an example of what this looks like for the iris dataset:
 
 ```typescript
-network(4, "sse", layer(3, "relu"), layer(3, "softmax"));
+let model = network(4, "sse", layer(3, "relu"), layer(3, "softmax"));
 ```
 
 The available loss functions are
@@ -195,3 +199,24 @@ And the available activation functions are
 - sigmoid
 - relu
 - softmax
+
+### Training the Model
+
+Just call the `train` function with the network model, data collection, and an options object. The options object can contain
+
+- alpha: `number` the learning rate. Smaller values train slower but could be more accurate.
+- max_epochs: `number` the maximum number of training epochs to execute
+- target_loss: `number` stop training after loss crosses below this threshold
+- print_epochs: `number` (optional) when this property is defined, print the loss every `n` epochs.
+
+You may omit _either_ max_epochs or target_loss, but at least one must be specified. In most cases, both should be used to make sure training doesn't enter an infinite loop.
+
+```typescript
+const history = train(model, data, {
+  alpha: 0.005,
+  max_epochs: 10000,
+  target_loss: 0.005,
+});
+```
+
+The `train` function returns the history of losses; that is, the loss after every epoch.

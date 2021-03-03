@@ -1,10 +1,9 @@
 import { collection } from "./data/collection.ts";
 import { load_csv } from "./data/load_csv.ts";
-import { onehot } from "./data/onehot.ts";
 import { layer } from "./network/layer.ts";
 import { loss, network, train } from "./network/network.ts";
 import { collapse } from "./tools/collapse.ts";
-import { range } from "./tools/range.ts";
+import { round } from "./tools/round.ts";
 
 // Load the iris dataset.
 // I've modified the csv we used in class to include
@@ -19,7 +18,7 @@ const data = load_csv("datasets/iris.data", {
 
 // First, onehot the collection on the species column.
 // Then, slice the collection into training and testing sets.
-const [training, testing] = onehot(data, "Species").slice(0.2);
+const [training, testing] = data.onehot("Species").slice(0.2);
 
 // Print the first item in the training set.
 // Notice that the "Species" label has been separated into
@@ -34,7 +33,7 @@ const [training, testing] = onehot(data, "Species").slice(0.2);
 //      (crossentropy would be better but my implementation is broken haha)
 // There is one hidden layer with three nodes and relu activation.
 // The output layer has 3 nodes (one for each Species) and uses softmax activation.
-const n = network(4, "sse", layer(3, "sigmoid"), layer(3, "softmax"));
+const model = network(4, "sse", layer(3, "relu"), layer(3, "softmax"));
 
 // Let's train the network!
 // The train function returns a list of the loss after each epoch
@@ -44,12 +43,15 @@ console.log("Training...");
 
 const start = Date.now();
 
-train(n, training, {
-  alpha: 0.01,
-  max_epochs: 10000,
-  target_loss: 0.02,
+let history = train(model, training, {
+  alpha: 0.005,
+  max_epochs: 100000,
+  target_loss: 0.005,
   // print_epochs: 100, // uncomment this to print the loss every 100 epochs
 });
+
+// Uncomment this line to save the loss history to a file.
+// Deno.writeTextFile("./loss.txt", history.join("\n"));
 
 const end = Date.now();
 
@@ -59,8 +61,8 @@ console.log(`Training finished! Took ${(end - start) / 1000}s`);
 // The loss function implicitly uses the loss function specified
 // when the network was created (sse in this case).
 console.log("\n=======================================\n");
-console.log("Training loss: ", loss(n, training));
-console.log("Test loss: ", loss(n, testing));
+console.log("Training loss: ", loss(model, training));
+console.log("Test loss: ", loss(model, testing));
 
 // Helper to get the flower name from network output.
 function getFlowerType(c: number[]) {
@@ -70,11 +72,11 @@ function getFlowerType(c: number[]) {
 // Create a collection for analyzing the output of the model.
 
 const results = testing.map((entry) => {
-  const out = n.predict(entry.x);
+  const out = model.predict(entry.x).map((o) => round(o, 2));
   const predicted = getFlowerType(out);
   const expected = getFlowerType(entry.y);
-  const error = n.error(entry);
-  return [expected === predicted, expected, predicted, error, ...out];
+  const error = model.error(entry);
+  return [expected === predicted, expected, predicted, round(error, 2), ...out];
 });
 
 const labels = [
