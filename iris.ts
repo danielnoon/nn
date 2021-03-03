@@ -11,30 +11,11 @@ import { range } from "./tools/range.ts";
 // a header so we don't have to specify it here
 const data = load_csv("datasets/iris.data", {
   y: 4,
-  str: "class",
-  labels: "infer",
-  type: "classification",
 });
 
-let transformed = data
-  .subset({
-    rows: (row) => row.getX("Petal Width") <= 1.5,
-  })
-  .sort("Sepal Length", "desc");
-
-let prepared = onehot(transformed, "Species");
-
-prepared
-  .subset({
-    x_columns: ["Petal Length", "Petal Width"],
-    y_columns: range(0, 3, 2), // equivalent to [0, 2]
-    rows: (row) => row.getX("Petal Length") > 5,
-  })
-  .head()
-  .print();
-
 // Print the first item in the collection
-data.head(1).print();
+
+// data.head(1).print();
 
 // First, onehot the collection on the species column.
 // Then, slice the collection into training and testing sets.
@@ -44,7 +25,8 @@ const [training, testing] = onehot(data, "Species").slice(0.2);
 // Notice that the "Species" label has been separated into
 // three columns. Additionally, the row will likely be different since
 // slice shuffles the data by default.
-training.head(1).print();
+
+// training.head(1).print();
 
 // Create the neural network.
 // This setup uses 4 inputs (petal and sepal length and width)
@@ -57,12 +39,21 @@ const n = network(4, "sse", layer(3, "sigmoid"), layer(3, "softmax"));
 // Let's train the network!
 // The train function returns a list of the loss after each epoch
 // which is very useful for graphing!
+// We'll also time how long it takes to finish the training.
+console.log("Training...");
+
+const start = Date.now();
+
 train(n, training, {
   alpha: 0.01,
   max_epochs: 10000,
   target_loss: 0.02,
   // print_epochs: 100, // uncomment this to print the loss every 100 epochs
 });
+
+const end = Date.now();
+
+console.log(`Training finished! Took ${(end - start) / 1000}s`);
 
 // Print out the loss for both the training and test sets.
 // The loss function implicitly uses the loss function specified
@@ -100,7 +91,12 @@ const outputs = collection(results, labels);
 
 // Grab and print any erroneous predictions, sorted by
 // worst error first.
-outputs
+const misclassified = outputs
   .subset({ rows: (row) => row.getY("Correct") === 0 })
-  .sort("Error", "desc")
-  .print();
+  .sort("Error", "desc");
+
+misclassified.print();
+
+// Print the proportion of misclassified entries.
+const pct = Math.round((misclassified.length / outputs.length) * 1000) / 10;
+console.log(`Misclassifications: ${pct}%`);
